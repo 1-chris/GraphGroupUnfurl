@@ -27,20 +27,20 @@ namespace GraphGroupUnfurl
             var graphServiceClient = new GraphServiceClient(
                 credential, scopes);
 
-            var groups = await graphServiceClient.Groups.GetAsync();
+            var groups = await graphServiceClient.Groups.GetAsync((requestConfiguration) =>
+            {
+                requestConfiguration.QueryParameters.Expand = new string[] { "members($select=id,displayName)"};
+            });
 
             if (groups?.Value is not null)
             {
                 groups.Value.ForEach(group => {
                     _logger.LogInformation($"Group: {group.DisplayName}");
-                    if (group?.Members is not null) 
-                    {
-                        group.Members.ForEach(member => {
-                            _logger.LogInformation($"Member: {member.Id} {member.OdataType}");
 
-                        });
+                    group?.Members?.ForEach(member => {
+                        _logger.LogInformation($"Member: {member.Id} {member.OdataType}");
+                    });
 
-                    }
                 });
             }
 
