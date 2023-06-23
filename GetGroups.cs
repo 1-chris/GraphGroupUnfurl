@@ -16,7 +16,7 @@ namespace GraphGroupUnfurl
         }
 
         [Function("GetGroups")]
-        public async void Run([TimerTrigger("0 */1 * * * *")] MyInfo myTimer)
+        public async Task Run([TimerTrigger("0 */1 * * * *")] MyInfo myTimer)
         {
             var credential = new ChainedTokenCredential(
                 new ManagedIdentityCredential(),
