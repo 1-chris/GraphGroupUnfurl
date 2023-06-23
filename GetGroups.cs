@@ -16,7 +16,7 @@ namespace GraphGroupUnfurl
         }
 
         [Function("GetGroups")]
-        public async void Run([TimerTrigger("0 */10 * * * *")] MyInfo myTimer)
+        public async void Run([TimerTrigger("0 */1 * * * *")] MyInfo myTimer)
         {
             var credential = new ChainedTokenCredential(
                 new ManagedIdentityCredential(),
@@ -36,7 +36,7 @@ namespace GraphGroupUnfurl
                     if (group?.Members is not null) 
                     {
                         group.Members.ForEach(member => {
-                            _logger.LogInformation($"Member: {member.Id}");
+                            _logger.LogInformation($"Member: {member.Id} {member.OdataType}");
 
                         });
 
