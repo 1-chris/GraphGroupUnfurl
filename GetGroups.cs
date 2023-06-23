@@ -36,21 +36,32 @@ namespace GraphGroupUnfurl
             {
                 groups.Value.ForEach(group => {
                     _logger.LogInformation($"Group: {group.DisplayName}");
+                    List<String> nonGroupMembers = new List<String>();
 
-                    group?.Members?.ForEach(async member => {
-                        _logger.LogInformation($"Group: {group.DisplayName} Member: {member.Id} Type: {member.OdataType}");
-                        if (member.OdataType == "#microsoft.graph.group")
+                    var nestedGroups = group?.Members?.Where(member => member.OdataType == "#microsoft.graph.group").ToList();
+                    
+                    while (nestedGroups?.Count() > 0)
+                    {
+                        var nestedGroup = nestedGroups.First();
+                        nestedGroups.Remove(nestedGroup);
+
+                        var nestedGroupMembers = graphServiceClient.Groups[nestedGroup.Id]?.GetAsync((requestConfiguration) =>
                         {
-                            var subGroupMembers = await graphServiceClient.Groups[$"{member.Id}"].GetAsync((requestConfiguration) =>
-                            {
-                                requestConfiguration.QueryParameters.Expand = new string[] { "members($select=id,displayName)"};
-                            });
-                            subGroupMembers?.Members?.ForEach(subMember => {
-                                _logger.LogInformation($"Group: {group.DisplayName} Member: {member.Id} Type: {member.OdataType}");
-                            });
-                        }
-                    });
+                            requestConfiguration.QueryParameters.Expand = new string[] { "members($select=id,displayName)"};
+                        }).Result?.Members;
 
+                        nestedGroupMembers?.ForEach(nestedGroupMember => {
+                            if (nestedGroupMember.OdataType == "#microsoft.graph.group")
+                            {
+                                nestedGroups.Add(nestedGroupMember);
+                            }
+                            else if (!String.IsNullOrEmpty(nestedGroupMember.Id))
+                            {
+                                    nonGroupMembers.Add(nestedGroupMember.Id);
+                            }
+                        });
+                    }
+                    _logger.LogInformation($"Group: {group.DisplayName} Non-Group Members count: {nonGroupMembers.Count()}");
                 });
             }
 
