@@ -37,8 +37,18 @@ namespace GraphGroupUnfurl
                 groups.Value.ForEach(group => {
                     _logger.LogInformation($"Group: {group.DisplayName}");
 
-                    group?.Members?.ForEach(member => {
-                        _logger.LogInformation($"Member: {member.Id} {member.OdataType}");
+                    group?.Members?.ForEach(async member => {
+                        _logger.LogInformation($"Group: {group.DisplayName} Member: {member.Id} Type: {member.OdataType}");
+                        if (member.OdataType == "#microsoft.graph.group")
+                        {
+                            var subGroupMembers = await graphServiceClient.Groups[$"{member.Id}"].GetAsync((requestConfiguration) =>
+                            {
+                                requestConfiguration.QueryParameters.Expand = new string[] { "members($select=id,displayName)"};
+                            });
+                            subGroupMembers?.Members?.ForEach(subMember => {
+                                _logger.LogInformation($"Group: {group.DisplayName} Member: {member.Id} Type: {member.OdataType}");
+                            });
+                        }
                     });
 
                 });
