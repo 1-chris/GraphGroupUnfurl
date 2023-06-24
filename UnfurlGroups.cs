@@ -40,8 +40,6 @@ namespace GraphGroupUnfurl
 
             var filteredGroups = groups.Value.Where(grp => !grp.GroupTypes.Contains("DynamicMembership")).ToList();
 
-            _logger.LogInformation($"Groups: {filteredGroups.Count}");
-
             foreach (var group in filteredGroups)
             {
                 if (group == null)
@@ -50,7 +48,6 @@ namespace GraphGroupUnfurl
                 string groupTypes = "";
                 group.GroupTypes?.ForEach(s => groupTypes += $"{s}, " );
 
-                _logger.LogInformation($"Group: {group.DisplayName} Types: {groupTypes}");
                 List<String> nonGroupMembers = new List<String>();
 
                 group.Members?.ForEach(member => {
@@ -83,7 +80,6 @@ namespace GraphGroupUnfurl
                         }
                     });
 
-                    _logger.LogInformation($"Group: {group.DisplayName} Non-Group Members count: {nonGroupMembers.Count()}");
                 }
 
 
