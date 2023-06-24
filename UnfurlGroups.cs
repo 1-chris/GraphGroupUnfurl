@@ -52,6 +52,7 @@ namespace GraphGroupUnfurl
                 });
                 
                 var nestedGroups = group?.Members?.Where(member => member.OdataType == "#microsoft.graph.group").ToList();
+                bool hasNestedGroups = nestedGroups?.Count() > 0;
                 while (nestedGroups?.Count() > 0)
                 {
                     var nestedGroup = nestedGroups.First();
