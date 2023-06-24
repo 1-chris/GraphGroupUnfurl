@@ -35,8 +35,16 @@ namespace GraphGroupUnfurl
             if (groups?.Value is not null)
             {
                 groups.Value.ForEach(group => {
+
                     _logger.LogInformation($"Group: {group.DisplayName}");
                     List<String> nonGroupMembers = new List<String>();
+
+                    group.Members?.ForEach(member => {
+                        if (!String.IsNullOrEmpty(member.Id) && member.OdataType != "#microsoft.graph.group")
+                        {
+                            nonGroupMembers.Add(member.Id);
+                        }
+                    });
 
                     var nestedGroups = group?.Members?.Where(member => member.OdataType == "#microsoft.graph.group").ToList();
                     
@@ -55,7 +63,7 @@ namespace GraphGroupUnfurl
                             {
                                 nestedGroups.Add(nestedGroupMember);
                             }
-                            else if (!String.IsNullOrEmpty(nestedGroupMember.Id))
+                            if (!String.IsNullOrEmpty(nestedGroupMember.Id) && nestedGroupMember.OdataType != "#microsoft.graph.group")
                             {
                                     nonGroupMembers.Add(nestedGroupMember.Id);
                             }
