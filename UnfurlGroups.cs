@@ -79,7 +79,7 @@ namespace GraphGroupUnfurl
 
                 var unfurledGroup = groups.Value.Where(x => x.DisplayName.Contains("UNF:"+group.DisplayName)).First();
 
-                if (unfurledGroup is not null)
+                if (unfurledGroup is not null && hasNestedGroups)
                 {
                     // Update the unfurled group membership and remove any members that are no longer in the original group
                     var unfurledMembership = unfurledGroup.Members;
@@ -103,7 +103,7 @@ namespace GraphGroupUnfurl
 
                     _logger.LogInformation($"Updated unfurled group for {group.DisplayName}");
                 }
-                else
+                else if (unfurledGroup is null && hasNestedGroups)
                 {
                     var requestBody = new Microsoft.Graph.Models.Group
                     {
