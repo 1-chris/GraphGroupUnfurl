@@ -16,7 +16,7 @@ namespace GraphGroupUnfurl
         }
 
         [Function("UnfurlGroups")]
-        public async Task Run([TimerTrigger("0 */1 * * * *")] MyInfo myTimer)
+        public async Task Run([TimerTrigger("0 */10 * * * *")] MyInfo myTimer)
         {
             var credential = new ChainedTokenCredential(
                 new ManagedIdentityCredential(),
@@ -39,9 +39,18 @@ namespace GraphGroupUnfurl
             }
 
             var filteredGroups = groups.Value.Where(grp => !grp.GroupTypes.Contains("DynamicMembership")).ToList();
+
+            _logger.LogInformation($"Groups: {filteredGroups.Count}");
+
             foreach (var group in filteredGroups)
             {
-                _logger.LogInformation($"Group: {group.DisplayName}");
+                if (group == null)
+                    continue;
+
+                string groupTypes = "";
+                group.GroupTypes?.ForEach(s => groupTypes += $"{s}, " );
+
+                _logger.LogInformation($"Group: {group.DisplayName} Types: {groupTypes}");
                 List<String> nonGroupMembers = new List<String>();
 
                 group.Members?.ForEach(member => {
@@ -77,7 +86,8 @@ namespace GraphGroupUnfurl
                     _logger.LogInformation($"Group: {group.DisplayName} Non-Group Members count: {nonGroupMembers.Count()}");
                 }
 
-                var unfurledGroup = groups.Value.Where(x => x.DisplayName.Contains("UNF:"+group.DisplayName)).First();
+
+                var unfurledGroup = groups.Value?.FirstOrDefault(x => x.DisplayName?.Contains("UNF:" + group?.DisplayName) == true);
 
                 if (unfurledGroup is not null && hasNestedGroups)
                 {
@@ -105,36 +115,44 @@ namespace GraphGroupUnfurl
                 }
                 else if (unfurledGroup is null && hasNestedGroups)
                 {
+                    var rand = new Random();
+                    Microsoft.Graph.Models.Group? completedGroupResult = null;
                     var requestBody = new Microsoft.Graph.Models.Group
                     {
-                        DisplayName = "UNF:"+group.DisplayName,
-                        Description = "Unfurled group for "+group.DisplayName,
+                        DisplayName = "UNF:"+group?.DisplayName,
+                        Description = "Unfurled group for "+group?.DisplayName,
                         MailEnabled = false,
-                        MailNickname = "UNF:"+group.DisplayName,
-                        SecurityEnabled = true
+                        SecurityEnabled = true,
+                        MailNickname = $"UNF_{rand.Next(10000,99999)}",
+                        GroupTypes = new List<string> { }
                     };
-                    var result = await graphServiceClient.Groups.PostAsync(requestBody);
-
-                    if (result is null)
+                    try
                     {
-                        _logger.LogInformation($"Failed to create unfurled group for {group.DisplayName}");
-                        return;
+                        completedGroupResult = await graphServiceClient.Groups.PostAsync(requestBody);
+                    }
+                    catch (Microsoft.Graph.Models.ODataErrors.ODataError  ex)
+                    {
+                        _logger.LogInformation($"Failed to create unfurled group for {group?.DisplayName}");
+                        _logger.LogInformation("Error creating group: " + ex.Error.Message);
                     }
 
-                    foreach (var nonGroupMember in nonGroupMembers)
+                    if (completedGroupResult is not null)
                     {
-                        var requestBody2 = new Microsoft.Graph.Models.ReferenceCreate
+                        foreach (var nonGroupMember in nonGroupMembers)
                         {
-                            OdataId = $"https://graph.microsoft.com/v1.0/directoryObjects/{nonGroupMember}"
-                        };
-                        await graphServiceClient.Groups[result.Id].Members.Ref.PostAsync(requestBody2);
+                            _logger.LogInformation($"Adding member {nonGroupMember}");
+
+                            var requestBody2 = new Microsoft.Graph.Models.ReferenceCreate
+                            {
+                                OdataId = $"https://graph.microsoft.com/v1.0/directoryObjects/{nonGroupMember}"
+                            };
+                            await graphServiceClient.Groups[completedGroupResult.Id].Members.Ref.PostAsync(requestBody2);
+                        }
+                    _logger.LogInformation($"Created unfurled group for {group?.DisplayName}. {completedGroupResult.DisplayName} - {completedGroupResult.Id}");
                     }
-                    _logger.LogInformation($"Created unfurled group for {group.DisplayName}");
+
                 }
-
             }
-
-
             _logger.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
         }
     }
