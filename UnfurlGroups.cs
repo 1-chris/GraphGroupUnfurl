@@ -42,7 +42,7 @@ namespace GraphGroupUnfurl
 
             foreach (var group in filteredGroups)
             {
-                if (group == null)
+                if (group is null)
                     continue;
 
                 string groupTypes = "";
@@ -57,7 +57,7 @@ namespace GraphGroupUnfurl
                     }
                 });
                 
-                var nestedGroups = group?.Members?.Where(member => member.OdataType == "#microsoft.graph.group").ToList();
+                var nestedGroups = group.Members?.Where(member => member.OdataType == "#microsoft.graph.group").ToList();
                 bool hasNestedGroups = nestedGroups?.Count() > 0;
                 while (nestedGroups?.Count() > 0)
                 {
@@ -83,7 +83,7 @@ namespace GraphGroupUnfurl
                 }
 
 
-                var unfurledGroup = groups.Value?.FirstOrDefault(x => x.DisplayName?.Contains("UNF:" + group?.DisplayName) == true);
+                var unfurledGroup = groups.Value?.FirstOrDefault(x => x.DisplayName?.Contains("UNF:" + group.DisplayName) == true);
 
                 if (unfurledGroup is not null && hasNestedGroups)
                 {
