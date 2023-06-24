@@ -92,6 +92,7 @@ namespace GraphGroupUnfurl
                     
                     foreach (var nonGroupMember in nonGroupMembers)
                     {
+
                         if (!unfurledMembership.Any(x => x.Id == nonGroupMember))
                         {
                             _logger.LogInformation($"Adding member to {group.DisplayName}: {nonGroupMember}");
@@ -102,10 +103,14 @@ namespace GraphGroupUnfurl
                             await graphServiceClient.Groups[unfurledGroup.Id].Members.Ref.PostAsync(requestBody);
                         }
 
-                        if (unfurledMembership.Any(x => x.Id == nonGroupMember))
+                    }
+
+                    foreach (var currentUnfurledMember in unfurledMembership)
+                    {
+                        if (!nonGroupMembers.Any(x => x == currentUnfurledMember.Id))
                         {
-                            _logger.LogInformation($"Removing member from {group.DisplayName}: {nonGroupMember}");
-                            await graphServiceClient.Groups[unfurledGroup.Id].Members[nonGroupMember].Ref.DeleteAsync();
+                            _logger.LogInformation($"Removing member from {group.DisplayName}: {currentUnfurledMember.Id}");
+                            await graphServiceClient.Groups[unfurledGroup.Id].Members[currentUnfurledMember.Id].Ref.DeleteAsync();
                         }
                     }
 
@@ -114,7 +119,9 @@ namespace GraphGroupUnfurl
                 else if (unfurledGroup is null && hasNestedGroups)
                 {
                     var rand = new Random();
+
                     Microsoft.Graph.Models.Group? completedGroupResult = null;
+
                     var requestBody = new Microsoft.Graph.Models.Group
                     {
                         DisplayName = "UNF:"+group?.DisplayName,
@@ -124,6 +131,7 @@ namespace GraphGroupUnfurl
                         MailNickname = $"UNF_{rand.Next(10000,99999)}",
                         GroupTypes = new List<string> { }
                     };
+
                     try
                     {
                         completedGroupResult = await graphServiceClient.Groups.PostAsync(requestBody);
@@ -144,13 +152,16 @@ namespace GraphGroupUnfurl
                             {
                                 OdataId = $"https://graph.microsoft.com/v1.0/directoryObjects/{nonGroupMember}"
                             };
+
                             await graphServiceClient.Groups[completedGroupResult.Id].Members.Ref.PostAsync(requestBody2);
                         }
+
                     _logger.LogInformation($"Created unfurled group for {group?.DisplayName}. {completedGroupResult.DisplayName} - {completedGroupResult.Id}");
                     }
 
                 }
             }
+            
             _logger.LogInformation($"C# Timer trigger function executed at: {DateTime.Now}");
         }
     }
