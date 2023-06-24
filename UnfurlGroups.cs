@@ -94,6 +94,7 @@ namespace GraphGroupUnfurl
                     {
                         if (!unfurledMembership.Any(x => x.Id == nonGroupMember))
                         {
+                            _logger.LogInformation($"Adding member to {group.DisplayName}: {nonGroupMember}");
                             var requestBody = new Microsoft.Graph.Models.ReferenceCreate
                             {
                                 OdataId = $"https://graph.microsoft.com/v1.0/directoryObjects/{nonGroupMember}"
@@ -103,6 +104,7 @@ namespace GraphGroupUnfurl
 
                         if (unfurledMembership.Any(x => x.Id == nonGroupMember))
                         {
+                            _logger.LogInformation($"Removing member from {group.DisplayName}: {nonGroupMember}");
                             await graphServiceClient.Groups[unfurledGroup.Id].Members[nonGroupMember].Ref.DeleteAsync();
                         }
                     }
