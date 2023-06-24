@@ -36,7 +36,7 @@ namespace GraphGroupUnfurl
             {
                 //groups.Value.Where(grp => grp.).ForEach(group => {
                 // filter out dynamic groups but keep unified and security groups
-                groups.Value.Where(grp => grp.GroupTypes.Contains("Unified") || grp.GroupTypes.Contains("Security")).ToList().ForEach(group => {
+                groups.Value.Where(grp => !grp.GroupTypes.Contains("DynamicMembership")).ToList().ForEach(group => {
                     _logger.LogInformation($"Group: {group.DisplayName}");
                     List<String> nonGroupMembers = new List<String>();
 
